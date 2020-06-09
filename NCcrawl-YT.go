@@ -4,12 +4,14 @@ import cache "github.com/Nuclear-Catapult/NCcrawl-YT/ID-Cache"
 import "fmt"
 
 func main() {
-	cache.Insert("GGsf8444444")
-	cache.Insert("lksf8440444")
-	cache.Insert("lksf8440444")
-	cache.Insert("siwi2444444")
-	fmt.Println(cache.Next())
-	fmt.Println(cache.Next())
-	fmt.Println(cache.Next())
-	fmt.Println(cache.Next())
+	seed_ID := "hsWr_JWTZss"
+	cache.Insert(seed_ID)
+
+	crawler()
+}
+
+func crawler() {
+	for id := cache.Next(); id != ""; id = cache.Next() {
+		fmt.Println(id)
+	}
 }
