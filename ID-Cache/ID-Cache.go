@@ -10,16 +10,17 @@ import "fmt"
 var queueCount uint64 = 0
 var bstCount uint64 = 0
 
-func Insert(str_id string) {
+func Insert(str_id string) int64 {
 	int_id := C.ulong(b64.Decode64(str_id))
-	if int(C.BST_insert(int_id)) != 0 {
+	if uint64(C.BST_insert(int_id)) != 0 {
 		queueCount++
 		bstCount++
-		if (bstCount - queueCount) % 100 == 0 {
+//		if (bstCount - queueCount) % 100 == 0 {
 			fmt.Printf("Processed: %d, Waiting: %d, Total %d\n", bstCount - queueCount, queueCount, bstCount)
-		}
+//		}
 		C.enqueue(int_id)
 	}
+	return int64(int_id)
 }
 
 func Next() string {

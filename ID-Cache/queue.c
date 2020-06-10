@@ -45,7 +45,12 @@ uint64_t dequeue()
 	}
 	uint64_t to_return = front->data;
 	struct Q_Node* to_delete = front;
-	front = front->next;
+	if (front == back) {
+		front == NULL;
+		back == NULL;
+	} else {
+		front = front->next;
+	}
 	free(to_delete);
 
 	pthread_mutex_unlock(&key);
