@@ -4,34 +4,30 @@ package idcache
 // #include "bst.h"
 // #include "queue.h"
 import "C"
-import b64 "github.com/Nuclear-Catapult/NCcrawl-YT/ID-Cache/ytbase64"
 import "fmt"
 
 var queueCount uint64 = 0
 var bstCount uint64 = 0
 
-func Insert(str_id string) int64 {
-	int_id := C.ulong(b64.Decode64(str_id))
-	if uint64(C.BST_insert(int_id)) != 0 {
+func Insert(id uint64) {
+	c_id := C.ulong(id)
+	if uint64(C.BST_insert(c_id)) != 0 {
 		queueCount++
 		bstCount++
-//		if (bstCount - queueCount) % 100 == 0 {
-			fmt.Printf("Processed: %d, Waiting: %d, Total %d\n", bstCount - queueCount, queueCount, bstCount)
-//		}
-		C.enqueue(int_id)
+		C.enqueue(c_id)
 	}
-	return int64(int_id)
 }
 
-func Next() string {
-	int_id := uint64(C.dequeue())
-	if int_id == 0 {
-		return ""
-	}
+func TryAgainLater(id uint64) {
+	queueCount++
+	C.enqueue(C.ulong(id))
+}
+
+func Next() (uint64) {
 	queueCount--
-	return b64.Encode64(int_id)
+	return uint64(C.dequeue())
 }
 
-func QueueCount() uint64 {
-	return queueCount
+func status() {
+	fmt.Printf("Processed: %d, Waiting: %d, Total %d\n", bstCount - queueCount, queueCount, bstCount)
 }
