@@ -5,6 +5,7 @@ package idcache
 // #include "queue.h"
 import "C"
 import "fmt"
+import "log"
 
 var queueCount uint64 = 0
 var bstCount uint64 = 0
@@ -33,6 +34,13 @@ func Next() (uint64) {
 		queueCount--
 	}
 	return status
+}
+
+func Key_Insert(id uint64) {
+	c_id := C.ulong(id)
+	if uint64(C.BST_insert(c_id)) == 0 {
+		log.Fatal("Fatal: Loading the primary keys resulted in duplicate values.")
+	}
 }
 
 func Status() {

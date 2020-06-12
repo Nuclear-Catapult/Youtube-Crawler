@@ -27,7 +27,7 @@ func main() {
 
 	var input string
 	for {
-		fmt.Println("[s]tatus, [q]uite, [a]dd thread")
+		fmt.Println("[s]tatus, [q]uite, [a]dd thread: followed by enter")
 		fmt.Scan(&input)
 		switch input {
 		case "a":
@@ -48,6 +48,7 @@ func load_db() {
 	db, err := sql.Open("sqlite3", "./yt-videos.db")
 	table_stmt, err := db.Prepare(`CREATE TABLE IF NOT EXISTS video (
 	video_id INTEGER(64) PRIMARY KEY,
+	title VARCHAR(100) NOT NULL,
 	rec_1 INTEGER(64) NOT NULL,
 	rec_2 INTEGER(64) NOT NULL,
 	rec_3 INTEGER(64) NOT NULL,
@@ -81,6 +82,7 @@ func load_db() {
 		cache.Insert(b64.Decode64(seed_ID))
 		return
 	}
+	fmt.Println("Loading yt-video.db...")
 
 	var video_id int64
 	rows, _ = db.Query("SELECT video_id FROM video")
@@ -111,9 +113,9 @@ func load_db() {
 func inserter(c chan []interface{}) {
 	db, err := sql.Open("sqlite3", "./yt-videos.db")
 	stmt, err := db.Prepare(`INSERT INTO video
-	(video_id, rec_1, rec_2, rec_3, rec_4, rec_5, rec_6, rec_7, rec_8, rec_9,
+	(video_id, title, rec_1, rec_2, rec_3, rec_4, rec_5, rec_6, rec_7, rec_8, rec_9,
 	rec_10, rec_11, rec_12, rec_13, rec_14, rec_15, rec_16, rec_17, rec_18)
-	values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+	values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
 	checkErr(err)
 
 	for {
@@ -130,6 +132,14 @@ func crawler(c chan []interface{}) {
 		row = append(row, int64(id))
 		doc, err := goquery.NewDocument("https://www.youtube.com/watch?v=" + b64.Encode64(id))
 		checkErr(err)
+		title := doc.Find("title").Text()
+		if len(title) > 7 {
+			title = title[:len(title) - 10]
+			row = append(row, title)
+		} else {
+			cache.TryAgainLater(id)
+			continue
+		}
 		rec_sel := doc.Find(".content-link.spf-link")
 		if rec_sel.Length() < 18 {
 		// For some reason, a valid YT webage varies with its initial recommendation count. Downloading a webpage
