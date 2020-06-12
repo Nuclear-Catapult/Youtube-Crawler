@@ -2,7 +2,7 @@ package ytbase64
 
 import "log"
 
-func Encode64(int_id uint64) (string) {
+func Encode64(int_id int64) (string) {
 	var str_id string
 	var temp uint8 = uint8(int_id & 0xF) << 2
 	int_id >>= 4
@@ -29,12 +29,12 @@ func Encode64(int_id uint64) (string) {
 	return str_id
 }
 
-func Decode64(str_id string) (uint64) {
-	var int_id uint64
-	var temp uint64 = 0
+func Decode64(str_id string) (int64) {
+	var int_id int64
+	var temp int64 = 0
 
 	for i := 0; i < 11; i++ {
-		temp = uint64(str_id[10 - i])
+		temp = int64(str_id[10 - i])
 		switch {
 		case temp >= 'A' && temp <= 'Z':
 			temp -= 65

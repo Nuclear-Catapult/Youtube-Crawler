@@ -2,4 +2,4 @@
 
 #include <stdint.h>
 
-uint64_t BST_insert(uint64_t data);
+int64_t BST_insert(int64_t data);

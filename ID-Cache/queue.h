@@ -2,5 +2,5 @@
 
 #include <stdint.h>
 
-void enqueue(uint64_t data);
-uint64_t dequeue();
+void enqueue(int64_t data);
+int64_t dequeue();

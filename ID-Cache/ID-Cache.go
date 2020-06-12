@@ -1,18 +1,18 @@
 package idcache
 
-// #cgo LDFLAGS: -L${SRCDIR} -lcache
+// #cgo LDFLAGS: -L${SRCDIR} -lcache -pthread
 // #include "bst.h"
 // #include "queue.h"
 import "C"
 import "fmt"
 import "log"
 
-var queueCount uint64 = 0
-var bstCount uint64 = 0
+var queueCount int64 = 0
+var bstCount int64 = 0
 
-func Insert(id uint64) bool {
-	c_id := C.ulong(id)
-	if uint64(C.BST_insert(c_id)) != 0 {
+func Insert(id int64) bool {
+	c_id := C.long(id)
+	if int64(C.BST_insert(c_id)) != 0 {
 		C.enqueue(c_id)
 		queueCount++
 		bstCount++
@@ -21,13 +21,13 @@ func Insert(id uint64) bool {
 	return false
 }
 
-func TryAgainLater(id uint64) {
+func TryAgainLater(id int64) {
 	queueCount++
-	C.enqueue(C.ulong(id))
+	C.enqueue(C.long(id))
 }
 
-func Next() (uint64) {
-	status := uint64(C.dequeue())
+func Next() (int64) {
+	status := int64(C.dequeue())
 	if status == 0 {
 		fmt.Println("Warning: Attempting to dequeue empty queue.")
 	} else {
@@ -36,9 +36,9 @@ func Next() (uint64) {
 	return status
 }
 
-func Key_Insert(id uint64) {
-	c_id := C.ulong(id)
-	if uint64(C.BST_insert(c_id)) == 0 {
+func Key_Insert(id int64) {
+	c_id := C.long(id)
+	if int64(C.BST_insert(c_id)) == 0 {
 		log.Fatal("Fatal: Loading the primary keys resulted in duplicate values.")
 	}
 }
@@ -48,6 +48,6 @@ func Status() {
 	bstCount - queueCount, queueCount, bstCount)
 }
 
-func QueueCount() uint64 {
+func QueueCount() int64 {
 	return queueCount
 }

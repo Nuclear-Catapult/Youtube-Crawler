@@ -88,8 +88,7 @@ func load_db() {
 	rows, _ = db.Query("SELECT video_id FROM video")
 	for rows.Next() {
 		rows.Scan(&video_id)
-		cache.Insert(uint64(video_id))
-		cache.Next()
+		cache.Key_Insert(video_id)
 	}
 
 	if cache.QueueCount() != 0 {
@@ -103,7 +102,7 @@ func load_db() {
 		rows2.Scan(&rec[0], &rec[1], &rec[2], &rec[3], &rec[4], &rec[5], &rec[6], &rec[7], &rec[8],
 		&rec[9], &rec[10], &rec[11], &rec[12], &rec[13], &rec[14], &rec[15], &rec[16], &rec[17])
 		for i := 0; i < 18; i++ {
-			cache.Insert(uint64(rec[i]))
+			cache.Insert(rec[i])
 		}
 	}
 	cache.Status()
@@ -129,7 +128,7 @@ func crawler(c chan []interface{}) {
 	for id := cache.Next(); id != 0; id = cache.Next() {
 		var	rec_count int
 		row := []interface{}{} // This will be inserted into yt-videos.db
-		row = append(row, int64(id))
+		row = append(row, id)
 		doc, err := goquery.NewDocument("https://www.youtube.com/watch?v=" + b64.Encode64(id))
 		checkErr(err)
 		title := doc.Find("title").Text()
@@ -157,7 +156,7 @@ func crawler(c chan []interface{}) {
 			}
 			rec_id := b64.Decode64(string(link[len(link)-11:len(link)]))
 			cache.Insert(rec_id)
-			row = append(row, int64(rec_id))
+			row = append(row, rec_id)
 			rec_count++
 			if rec_count == 18 {
 				return false

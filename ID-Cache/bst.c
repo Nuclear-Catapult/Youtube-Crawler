@@ -6,7 +6,7 @@
 struct BST_Node {
 	struct BST_Node* left;
 	struct BST_Node* right;
-	uint64_t data;
+	int64_t data;
 };
 
 struct BST_Node* root = NULL;
@@ -15,7 +15,7 @@ pthread_mutex_t key;
 
 // returns 1 if success
 // returns 0 if duplicate value caused failure
-uint64_t BST_insert(uint64_t data)
+int64_t BST_insert(int64_t data)
 {
 	struct BST_Node** node = &root;
 	pthread_mutex_lock(&key);
