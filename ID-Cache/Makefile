@@ -1,8 +1,8 @@
-libcache.a: bst.o queue.o
-	ar rs -o libcache.a bst.o queue.o
+libcache.a: hash_table.o queue.o
+	ar rs -o libcache.a hash_table.o queue.o
 
 queue.o: queue.c queue.h
 	gcc -c queue.c
 
-bst.o: bst.c bst.h
-	gcc -c bst.c
+hash_table.o: hash_table.c hash_table.h
+	gcc -c hash_table.c
