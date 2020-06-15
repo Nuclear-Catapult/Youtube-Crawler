@@ -26,7 +26,7 @@ func TryAgainLater(id int64) {
 	C.enqueue(C.long(id))
 }
 
-func Next() (int64) {
+func Next() int64 {
 	status := int64(C.dequeue())
 	if status == 0 {
 		fmt.Println("Warning: Attempting to dequeue empty queue.")
@@ -45,8 +45,8 @@ func Key_Insert(id int64) {
 }
 
 func Status() {
-	fmt.Printf("IDs: Processed %d, Waiting %d, Total %d\n",
-	tableCount - queueCount, queueCount, tableCount)
+	fmt.Printf("IDs: Processed %d, Waiting %d, Total Cached %d\n",
+		tableCount-queueCount, queueCount, tableCount)
 }
 
 func QueueCount() int64 {
