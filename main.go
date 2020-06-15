@@ -45,6 +45,44 @@ func main() {
 	}
 }
 
+func crawler(c chan []interface{}) {
+	for id := cache.Next(); id != 0; id = cache.Next() {
+		row := []interface{}{id}
+		doc, err := goquery.NewDocument("https://www.youtube.com/watch?v=" + b64.Encode64(id))
+		checkErr(err)
+		title := doc.Find("title").Text()
+		var video_status bool
+		if len(title) > 7 {
+			row = append(row, title[:len(title)-10])
+			video_status = ParseHTML(doc, &row)
+			if video_status == true {
+				c <- row
+				continue
+			}
+		}
+		// The webpage must be blank with a large JSON object with all the data we need.
+		// I'll eventually add a JSON handler here.
+		cache.TryAgainLater(id)
+	}
+	fmt.Println("Stack empty. Thread leaving")
+	thread_count--
+}
+
+func inserter(c chan []interface{}) {
+	db, err := sql.Open("sqlite3", "./videos.db?_sync=0")
+	stmt, err := db.Prepare(`INSERT INTO videos
+	(id, title, views, likes, dislikes, rec_1, rec_2, rec_3, rec_4, rec_5, rec_6, rec_7, rec_8, rec_9,
+	rec_10, rec_11, rec_12, rec_13, rec_14, rec_15, rec_16, rec_17, rec_18)
+	values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+	checkErr(err)
+
+	for {
+		_, err := stmt.Exec(<-c...)
+		checkErr(err)
+	}
+	db.Close()
+}
+
 func load_db() {
 	db, err := sql.Open("sqlite3", "./videos.db")
 	table_stmt, err := db.Prepare(`CREATE TABLE IF NOT EXISTS videos (
@@ -111,38 +149,6 @@ func load_db() {
 	}
 	cache.Status()
 	db.Close()
-}
-
-func inserter(c chan []interface{}) {
-	db, err := sql.Open("sqlite3", "./videos.db?_sync=0")
-	stmt, err := db.Prepare(`INSERT INTO videos
-	(id, title, views, likes, dislikes, rec_1, rec_2, rec_3, rec_4, rec_5, rec_6, rec_7, rec_8, rec_9,
-	rec_10, rec_11, rec_12, rec_13, rec_14, rec_15, rec_16, rec_17, rec_18)
-	values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-	checkErr(err)
-
-	for {
-		_, err := stmt.Exec(<-c...)
-		checkErr(err)
-	}
-	db.Close()
-}
-
-func crawler(c chan []interface{}) {
-	for id := cache.Next(); id != 0; id = cache.Next() {
-		row := []interface{}{id}
-		doc, err := goquery.NewDocument("https://www.youtube.com/watch?v=" + b64.Encode64(id))
-		checkErr(err)
-		title := doc.Find("title").Text()
-		if len(title) > 7 {
-			row = append(row, title[:len(title)-10])
-			ParseHTML(doc, id, row, c)
-		} else {
-			cache.TryAgainLater(id)
-		}
-	}
-	fmt.Println("Stack empty. Thread leaving")
-	thread_count--
 }
 
 func checkErr(err error) {

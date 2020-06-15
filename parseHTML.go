@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func extractNumber(str string, doc *goquery.Document) int64 {
+func extractNumber(str string) int64 {
 	if str == "" {
 		return -1
 	}
@@ -30,14 +30,14 @@ func extractNumber(str string, doc *goquery.Document) int64 {
 	return views
 }
 
-func ParseHTML(doc *goquery.Document, id int64, row []interface{}, video_chan chan []interface{}) {
+func ParseHTML(doc *goquery.Document, row *[]interface{}) bool {
 	views_slice := doc.Find(".watch-view-count").Text()
-	row = append(row, extractNumber(views_slice, doc))
+	*row = append(*row, extractNumber(views_slice))
 
 	likes_slice := doc.Find(".like-button-renderer-like-button-unclicked > span:nth-child(1)").Text()
 	dislikes_slice := doc.Find(".like-button-renderer-dislike-button-unclicked > span:nth-child(1)").Text()
-	row = append(row, extractNumber(likes_slice, doc))
-	row = append(row, extractNumber(dislikes_slice, doc))
+	*row = append(*row, extractNumber(likes_slice))
+	*row = append(*row, extractNumber(dislikes_slice))
 
 	channel_id, status := doc.Find(`[itemprop="channelId"]`).Attr("content")
 	if status == false {
@@ -57,8 +57,7 @@ func ParseHTML(doc *goquery.Document, id int64, row []interface{}, video_chan ch
 		// may yield 22 recommendations, and downloading the same page again usually results in a
 		// different count. A minority of pages have less than 18, of these we'll insert back into the queue to
 		// try again later.
-		cache.TryAgainLater(id)
-		return
+		return false
 	}
 
 	var rec_count int
@@ -69,12 +68,12 @@ func ParseHTML(doc *goquery.Document, id int64, row []interface{}, video_chan ch
 		}
 		rec_id := b64.Decode64(string(link[len(link)-11 : len(link)]))
 		cache.Insert(rec_id)
-		row = append(row, rec_id)
+		*row = append(*row, rec_id)
 		rec_count++
 		if rec_count == 18 {
 			return false
 		}
 		return true
 	})
-	video_chan <- row
+	return true
 }
