@@ -6,6 +6,7 @@ import (
 	b64 "github.com/Nuclear-Catapult/Youtube-Crawler/ytbase64"
 	"github.com/PuerkitoBio/goquery"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -19,7 +20,7 @@ func extractNumber(str string, doc *goquery.Document) int64 {
 		str = str[:index]
 	}
 	if str == "No" {
-		// This should means the video has "No views"
+		// This should mean the video has "No views"
 		return 0
 	}
 	views, err := strconv.ParseInt(strings.ReplaceAll(str, ",", ""), 10, 64)
@@ -29,11 +30,7 @@ func extractNumber(str string, doc *goquery.Document) int64 {
 	return views
 }
 
-func ParseHTML(doc *goquery.Document, id int64, title string, c chan []interface{}) {
-	row := []interface{}{}
-	row = append(row, id)
-	row = append(row, title[:len(title)-10])
-
+func ParseHTML(doc *goquery.Document, id int64, row []interface{}, video_chan chan []interface{}) {
 	views_slice := doc.Find(".watch-view-count").Text()
 	row = append(row, extractNumber(views_slice, doc))
 
@@ -41,6 +38,18 @@ func ParseHTML(doc *goquery.Document, id int64, title string, c chan []interface
 	dislikes_slice := doc.Find(".like-button-renderer-dislike-button-unclicked > span:nth-child(1)").Text()
 	row = append(row, extractNumber(likes_slice, doc))
 	row = append(row, extractNumber(dislikes_slice, doc))
+
+	channel_id, status := doc.Find(`[itemprop="channelId"]`).Attr("content")
+	if status == false {
+		f, _ := os.Create("failed_fluke.html")
+		html, _ := doc.Html()
+		f.WriteString(html)
+		log.Fatal("content empty")
+	}
+	lhalf := b64.Decode64(channel_id[2:])
+	rhalf := b64.Decode64(channel_id[13:])
+
+	cache.InsertChannel(lhalf, rhalf)
 
 	rec_sel := doc.Find(".content-link.spf-link")
 	if rec_sel.Length() < 18 {
@@ -67,5 +76,5 @@ func ParseHTML(doc *goquery.Document, id int64, title string, c chan []interface
 		}
 		return true
 	})
-	c <- row
+	video_chan <- row
 }

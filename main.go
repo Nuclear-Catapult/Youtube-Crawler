@@ -130,11 +130,13 @@ func inserter(c chan []interface{}) {
 
 func crawler(c chan []interface{}) {
 	for id := cache.Next(); id != 0; id = cache.Next() {
+		row := []interface{}{id}
 		doc, err := goquery.NewDocument("https://www.youtube.com/watch?v=" + b64.Encode64(id))
 		checkErr(err)
 		title := doc.Find("title").Text()
 		if len(title) > 7 {
-			ParseHTML(doc, id, title, c)
+			row = append(row, title[:len(title)-10])
+			ParseHTML(doc, id, row, c)
 		} else {
 			cache.TryAgainLater(id)
 		}
