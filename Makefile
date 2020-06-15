@@ -1,5 +1,5 @@
-crawler: crawler.go parseHTML.go cache
-	go build crawler.go parseHTML.go
+crawler: main.go parseHTML.go cache
+	go build main.go parseHTML.go
 
 cache:
-	$(MAKE) -C ID-Cache
+	$(MAKE) -C DB-Cache

@@ -3,7 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	cache "github.com/Nuclear-Catapult/Youtube-Crawler/ID-Cache"
+	cache "github.com/Nuclear-Catapult/Youtube-Crawler/DB-Cache"
 	b64 "github.com/Nuclear-Catapult/Youtube-Crawler/ytbase64"
 	"github.com/PuerkitoBio/goquery"
 	_ "github.com/mattn/go-sqlite3"
@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-var thread_count int = 200
+var thread_count int = 1
 
 func main() {
 	c := make(chan []interface{})
@@ -46,9 +46,9 @@ func main() {
 }
 
 func load_db() {
-	db, err := sql.Open("sqlite3", "./yt-videos.db")
-	table_stmt, err := db.Prepare(`CREATE TABLE IF NOT EXISTS video (
-	video_id INTEGER(64) PRIMARY KEY,
+	db, err := sql.Open("sqlite3", "./videos.db")
+	table_stmt, err := db.Prepare(`CREATE TABLE IF NOT EXISTS videos (
+	id INTEGER(64) PRIMARY KEY,
 	title VARCHAR(100) NOT NULL,
 	views INTEGER(64) NOT NULL,
 	likes INTEGER(64) NOT NULL,
@@ -75,21 +75,21 @@ func load_db() {
 	table_stmt.Exec()
 
 	var row_count int64
-	rows, _ := db.Query("SELECT COUNT(*) FROM video")
+	rows, _ := db.Query("SELECT COUNT(*) FROM videos")
 	for rows.Next() {
 		rows.Scan(&row_count)
 	}
 
 	if row_count == 0 {
-		fmt.Println("yt-video.db not found. Loading seed ID hsWr_JWTZss")
+		fmt.Println("video.db not found. Loading seed ID hsWr_JWTZss")
 		seed_ID := "hsWr_JWTZss"
 		cache.Insert(b64.Decode64(seed_ID))
 		return
 	}
-	fmt.Println("Loading yt-video.db...")
+	fmt.Println("Loading video.db...")
 
 	var video_id int64
-	rows, _ = db.Query("SELECT video_id FROM video")
+	rows, _ = db.Query("SELECT id FROM videos")
 	for rows.Next() {
 		rows.Scan(&video_id)
 		cache.Key_Insert(video_id)
@@ -101,7 +101,7 @@ func load_db() {
 
 	var rec [18]int64
 	rows2, _ := db.Query(`SELECT rec_1, rec_2, rec_3, rec_4, rec_5, rec_6, rec_7, rec_8, rec_9,
-	                    rec_10, rec_11, rec_12, rec_13, rec_14, rec_15, rec_16, rec_17, rec_18 FROM video`)
+	                    rec_10, rec_11, rec_12, rec_13, rec_14, rec_15, rec_16, rec_17, rec_18 FROM videos`)
 	for rows2.Next() {
 		rows2.Scan(&rec[0], &rec[1], &rec[2], &rec[3], &rec[4], &rec[5], &rec[6], &rec[7], &rec[8],
 			&rec[9], &rec[10], &rec[11], &rec[12], &rec[13], &rec[14], &rec[15], &rec[16], &rec[17])
@@ -114,9 +114,9 @@ func load_db() {
 }
 
 func inserter(c chan []interface{}) {
-	db, err := sql.Open("sqlite3", "./yt-videos.db?_sync=0")
-	stmt, err := db.Prepare(`INSERT INTO video
-	(video_id, title, views, likes, dislikes, rec_1, rec_2, rec_3, rec_4, rec_5, rec_6, rec_7, rec_8, rec_9,
+	db, err := sql.Open("sqlite3", "./videos.db?_sync=0")
+	stmt, err := db.Prepare(`INSERT INTO videos
+	(id, title, views, likes, dislikes, rec_1, rec_2, rec_3, rec_4, rec_5, rec_6, rec_7, rec_8, rec_9,
 	rec_10, rec_11, rec_12, rec_13, rec_14, rec_15, rec_16, rec_17, rec_18)
 	values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
 	checkErr(err)
