@@ -12,14 +12,13 @@ import (
 )
 
 var thread_count int = 1
+var v = make(chan []interface{})
 
 func main() {
-	c := make(chan []interface{})
-
 	load_db()
-	go inserter(c)
+	go inserter()
 	for i := 0; i < thread_count; i++ {
-		go crawler(c)
+		go crawler()
 		for cache.QueueCount() < 5 {
 			time.Sleep(time.Millisecond * 100)
 		}
@@ -31,7 +30,7 @@ func main() {
 		fmt.Scan(&input)
 		switch input {
 		case "a":
-			go crawler(c)
+			go crawler()
 			thread_count++
 			fmt.Printf("Thread count: %d\n", thread_count)
 		case "s":
@@ -45,7 +44,7 @@ func main() {
 	}
 }
 
-func crawler(c chan []interface{}) {
+func crawler() {
 	for id := cache.Next(); id != 0; id = cache.Next() {
 		row := []interface{}{id}
 		doc, err := goquery.NewDocument("https://www.youtube.com/watch?v=" + b64.Encode64(id))
@@ -56,7 +55,7 @@ func crawler(c chan []interface{}) {
 			row = append(row, title[:len(title)-10])
 			video_status = ParseHTML(doc, &row)
 			if video_status == true {
-				c <- row
+				v <- row
 				continue
 			}
 		}
@@ -68,7 +67,7 @@ func crawler(c chan []interface{}) {
 	thread_count--
 }
 
-func inserter(c chan []interface{}) {
+func inserter() {
 	db, err := sql.Open("sqlite3", "./videos.db?_sync=0")
 	defer db.Close()
 	stmt, err := db.Prepare(`INSERT INTO videos
@@ -78,7 +77,7 @@ func inserter(c chan []interface{}) {
 	checkErr(err)
 
 	for {
-		_, err := stmt.Exec(<-c...)
+		_, err := stmt.Exec(<-v...)
 		checkErr(err)
 	}
 }
