@@ -70,6 +70,7 @@ func crawler(c chan []interface{}) {
 
 func inserter(c chan []interface{}) {
 	db, err := sql.Open("sqlite3", "./videos.db?_sync=0")
+	defer db.Close()
 	stmt, err := db.Prepare(`INSERT INTO videos
 	(id, title, views, likes, dislikes, rec_1, rec_2, rec_3, rec_4, rec_5, rec_6, rec_7, rec_8, rec_9,
 	rec_10, rec_11, rec_12, rec_13, rec_14, rec_15, rec_16, rec_17, rec_18)
@@ -80,11 +81,11 @@ func inserter(c chan []interface{}) {
 		_, err := stmt.Exec(<-c...)
 		checkErr(err)
 	}
-	db.Close()
 }
 
 func load_db() {
 	db, err := sql.Open("sqlite3", "./videos.db")
+	defer db.Close()
 	table_stmt, err := db.Prepare(`CREATE TABLE IF NOT EXISTS videos (
 	id INTEGER(64) PRIMARY KEY,
 	title VARCHAR(100) NOT NULL,
@@ -148,7 +149,6 @@ func load_db() {
 		}
 	}
 	cache.Status()
-	db.Close()
 }
 
 func checkErr(err error) {

@@ -46,8 +46,8 @@ int64_t dequeue()
 	int64_t to_return = front->data;
 	struct Q_Node* to_delete = front;
 	if (front == back) {
-		front == NULL;
-		back == NULL;
+		front = NULL;
+		back = NULL;
 	} else {
 		front = front->next;
 	}
