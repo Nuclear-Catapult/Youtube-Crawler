@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func extractNumber(str string) int64 {
+func ExtractNumber(str string) int64 {
 	if str == "" {
 		return -1
 	}
@@ -30,14 +30,17 @@ func extractNumber(str string) int64 {
 	return views
 }
 
-func ParseHTML(doc *goquery.Document, row *[]interface{}) bool {
+func ParseHTML(doc *goquery.Document, video_row []interface{}) bool {
 	views_slice := doc.Find(".watch-view-count").Text()
-	*row = append(*row, extractNumber(views_slice))
+	if views_slice == "" {
+		return true
+	}
+	video_row = append(video_row, ExtractNumber(views_slice))
 
 	likes_slice := doc.Find(".like-button-renderer-like-button-unclicked > span:nth-child(1)").Text()
 	dislikes_slice := doc.Find(".like-button-renderer-dislike-button-unclicked > span:nth-child(1)").Text()
-	*row = append(*row, extractNumber(likes_slice))
-	*row = append(*row, extractNumber(dislikes_slice))
+	video_row = append(video_row, ExtractNumber(likes_slice))
+	video_row = append(video_row, ExtractNumber(dislikes_slice))
 
 	channel_id, status := doc.Find(`[itemprop="channelId"]`).Attr("content")
 	if status == false {
@@ -53,6 +56,10 @@ func ParseHTML(doc *goquery.Document, row *[]interface{}) bool {
 
 	rec_sel := doc.Find(".content-link.spf-link")
 	if rec_sel.Length() < 18 {
+		if rec_sel.Length() == 0 {
+			checkIfAgeRestricted(doc, &video_row)
+			return true
+		}
 		// For some reason, a valid YT webage varies with its initial recommendation count. Downloading a webpage
 		// may yield 22 recommendations, and downloading the same page again usually results in a
 		// different count. A minority of pages have less than 18, of these we'll insert back into the queue to
@@ -68,12 +75,28 @@ func ParseHTML(doc *goquery.Document, row *[]interface{}) bool {
 		}
 		rec_id := b64.Decode64(string(link[len(link)-11 : len(link)]))
 		cache.Insert(rec_id)
-		*row = append(*row, rec_id)
+		video_row = append(video_row, rec_id)
 		rec_count++
 		if rec_count == 18 {
 			return false
 		}
 		return true
 	})
+	v <- video_row
 	return true
+}
+
+func checkIfAgeRestricted(doc *goquery.Document, video_row *[]interface{}) {
+	meta := doc.Find("div#content yt-formatted-string a").First().Text()
+	if meta != "Age-restricted video (based on Community Guidelines)" {
+		f, _ := os.Create("dump.html")
+		html_string, _ := doc.Html()
+		f.WriteString(html_string)
+		log.Fatal("Video has 0 recommendations and does not appear to be age-restricted")
+	}
+
+	for i := 0; i < 18; i++ {
+		*video_row = append(*video_row, 0)
+	}
+	v <- *video_row
 }
