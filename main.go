@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strings"
+	"strconv"
 	"database/sql"
 	"fmt"
 	cache "github.com/Nuclear-Catapult/Youtube-Crawler/DB-Cache"
@@ -54,8 +56,8 @@ func crawler() {
 		title := doc.Find("title").Text()
 		var status bool
 		if len(title) > 7 {
-			row = append(row, title[:len(title)-10])
-			status = ParseHTML(doc, row)
+//			row = append(row, title[:len(title)-10])
+//			status = ParseHTML(doc, row)
 		} else {
 			status = ParseJSON(doc, row, id)
 		}
@@ -73,9 +75,9 @@ func inserter() {
 	checkErr(err)
 	defer db.Close()
 	stmt, err := db.Prepare(`INSERT INTO videos
-	(id, title, views, likes, dislikes, rec_1, rec_2, rec_3, rec_4, rec_5, rec_6, rec_7, rec_8, rec_9,
+	(id, title, views, likes, dislikes, lchannel_id, rchannel_id, rec_1, rec_2, rec_3, rec_4, rec_5, rec_6, rec_7, rec_8, rec_9,
 	rec_10, rec_11, rec_12, rec_13, rec_14, rec_15, rec_16, rec_17, rec_18)
-	values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+	values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
 	checkErr(err)
 
 	for {
@@ -93,6 +95,8 @@ func load_db() {
 	views INTEGER(64) NOT NULL,
 	likes INTEGER(64) NOT NULL,
 	dislikes INTEGER(64) NOT NULL,
+	lchannel_id INTEGER(64) NOT NULL,
+	rchannel_id INTEGER(64) NOT NULL,
 	rec_1 INTEGER(64) NOT NULL,
 	rec_2 INTEGER(64) NOT NULL,
 	rec_3 INTEGER(64) NOT NULL,
@@ -161,4 +165,23 @@ func checkErr(err error) {
 		fmt.Println("Uh Oh..")
 		log.Fatal(err)
 	}
+}
+
+func GetSubs(str string) int64 {
+	str = str[:strings.IndexByte(str, ' ')]
+	var multiplier float64 = 1
+	c := str[len(str)-1]
+	switch c {
+	case 'M':
+		multiplier = 1000000
+		str = str[:len(str)-1]
+	case 'K':
+		multiplier = 1000
+		str = str[:len(str)-1]
+	}
+	sub_count, err := strconv.ParseFloat(str, 64)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return int64(sub_count * multiplier)
 }

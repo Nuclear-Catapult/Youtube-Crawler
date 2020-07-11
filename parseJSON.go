@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"github.com/PuerkitoBio/goquery"
+	"html"
 )
 
 type struct3 struct {
@@ -118,16 +119,10 @@ func ParseJSON(doc *goquery.Document, video_row []interface{}, id int64) bool {
 		}
 	}
 
-	/*
 	{// get channel name, ID, and subscriber count
-		subscriber_count := contents[1]["videoSecondaryInfoRenderer"]["owner"].
-		(map[string]interface{})["videoOwnerRenderer"].
-		(map[string]interface{})["subscriberCountText"].
-		(map[string]interface{})["runs"].
-		([]interface{})[0].
-		(map[string]interface{})["text"]
+		printJSON(j)
 
-		channel := contents[1]["videoSecondaryInfoRenderer"]["owner"].
+		channel := contents[contents_index+1]["videoSecondaryInfoRenderer"]["owner"].
 		(map[string]interface{})["videoOwnerRenderer"].
 		(map[string]interface{})["title"].
 		(map[string]interface{})["runs"].
@@ -140,7 +135,7 @@ func ParseJSON(doc *goquery.Document, video_row []interface{}, id int64) bool {
 		lhalf := b64.Decode64(channel_id.(string)[2:])
 		rhalf := b64.Decode64(channel_id.(string)[13:])
 
-		if subscriber_count != "" && cache.InsertChannel(lhalf, rhalf) == true {
+		if cache.InsertChannel(lhalf, rhalf) == true {
 			channel_name := channel.(map[string]interface{})["text"]
 
 			if channel_name == "YouTube Movies" {
@@ -149,15 +144,30 @@ func ParseJSON(doc *goquery.Document, video_row []interface{}, id int64) bool {
 
 			channel_row := []interface{}{lhalf, rhalf}
 			channel_row = append(channel_row, html.EscapeString(channel_name.(string)))
-			channel_row  = append(channel_row, GetSubs(subscriber_count.(string)))
-			c <- channel_row
-			fmt.Printf("%v %v %v %v\n", lhalf, rhalf, channel_name.(string), GetSubs(subscriber_count.(string)))
+
+			sub_count := contents[contents_index+1]["videoSecondaryInfoRenderer"]["owner"].
+			(map[string]interface{})["videoOwnerRenderer"].
+			(map[string]interface{})["subscriberCountText"]
+
+			// Check if subscriber count is hidden
+			if sub_count == nil {
+				channel_row  = append(channel_row, -1)
+				//c <- channel_row
+			} else {
+				sub_count = sub_count.(map[string]interface{})["runs"].
+				([]interface{})[0].
+				(map[string]interface{})["text"]
+				if sub_count != nil {
+					channel_row  = append(channel_row, GetSubs(sub_count.(string)))
+				//	c <- channel_row
+				}
+			}
+			//fmt.Printf("%v %v %v %v\n", lhalf, rhalf, channel_name.(string), GetSubs(subscriber_count.(string)))
 		}
 
 		video_row = append(video_row, lhalf)
 		video_row = append(video_row, rhalf)
 	}
-	*/
 
 	rec_check :=  r.Contents.TwoColumnWatchNextResults.SecondaryResults["secondaryResults"]
 	if rec_check == nil || rec_check.(map[string]interface{})["results"] == nil {
